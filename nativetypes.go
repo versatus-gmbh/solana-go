@@ -26,6 +26,8 @@ import (
 	bin "github.com/gagliardetto/binary"
 	"github.com/mostynb/zstdpool-freelist"
 	"github.com/mr-tron/base58"
+	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/bsontype"
 )
 
 type Padding []byte
@@ -191,6 +193,44 @@ func (p *Signature) UnmarshalJSON(data []byte) (err error) {
 	copy(target[:], dat)
 	*p = target
 	return
+}
+
+// MarshalBSON implements the bson.Marshaler interface.
+func (p Signature) MarshalBSON() ([]byte, error) {
+	return bson.Marshal(p.String())
+}
+
+// UnmarshalBSON implements the bson.Unmarshaler interface.
+func (p *Signature) UnmarshalBSON(data []byte) (err error) {
+	var s string
+	if err := bson.Unmarshal(data, &s); err != nil {
+		return err
+	}
+
+	*p, err = SignatureFromBase58(s)
+	if err != nil {
+		return fmt.Errorf("invalid signature %q: %w", s, err)
+	}
+	return nil
+}
+
+// MarshalBSONValue implements the bson.ValueMarshaler interface.
+func (p Signature) MarshalBSONValue() (bsontype.Type, []byte, error) {
+	return bson.MarshalValue(p.String())
+}
+
+// UnmarshalBSONValue implements the bson.ValueUnmarshaler interface.
+func (p *Signature) UnmarshalBSONValue(t bsontype.Type, data []byte) (err error) {
+	var s string
+	if err := bson.UnmarshalValue(t, data, &s); err != nil {
+		return err
+	}
+
+	*p, err = SignatureFromBase58(s)
+	if err != nil {
+		return fmt.Errorf("invalid signature %q: %w", s, err)
+	}
+	return nil
 }
 
 // Verify checks that the signature is valid for the given public key and message.

@@ -25,7 +25,7 @@ import (
 
 	bin "github.com/gagliardetto/binary"
 
-	"github.com/gagliardetto/solana-go"
+	"github.com/versatus-gmbh/solana-go"
 )
 
 type Context struct {
